@@ -193,20 +193,22 @@ class InferenceEngine(object):
         if bindings:
             if len(rule.lhs) == 1:
                 rule_cp = copy.deepcopy(rule)
-                outcome_fact = Fact(rule_cp.rhs, [[fact, rule]])
+                outcome_fact = Fact(instantiate(rule_cp.rhs, bindings), [[fact, rule]])
+                # use instantiate instead
+                """
                 for term in outcome_fact.statement.terms:
                     if term.term.element in bindings.bindings_dict:
                         ind = outcome_fact.statement.terms.index(term)
                         outcome_fact.statement.terms[ind].term = Constant(bindings.bindings_dict[term.term.element])
-                ind = kb.facts.index(fact)
-                kb.facts[ind].supports_facts.append(outcome_fact)
-                ind = kb.rules.index(rule)
-                kb.rules[ind].supports_facts.append(outcome_fact)
+                """
+                fact.supports_facts.append(outcome_fact)
+                rule.supports_facts.append(outcome_fact)
                 kb.kb_add(outcome_fact)
             else:
                 rule_cp = copy.deepcopy(rule)
-                del(rule_cp.lhs[0])
-                outcome_rule = Rule([rule_cp.lhs, rule_cp.rhs], [[fact, rule]])
+                outcome_rule = Rule([[instantiate(state_lhs, bindings) for state_lhs in rule_cp.lhs[1:]], instantiate(rule_cp.rhs, bindings)], [[fact, rule]])
+                # use instantiate instead
+                """
                 for lhs_statement in outcome_rule.lhs:
                     for term in lhs_statement.terms:
                         if term.term.element in bindings.bindings_dict:
@@ -216,9 +218,8 @@ class InferenceEngine(object):
                     if term.term.element in bindings.bindings_dict:
                         ind = outcome_rule.rhs.terms.index(term)
                         outcome_rule.rhs.terms[ind].term = Constant(bindings.bindings_dict[term.term.element])
-                ind = kb.facts.index(fact)
-                kb.facts[ind].supports_rules.append(outcome_rule)
-                ind = kb.rules.index(rule)
-                kb.rules[ind].supports_rules.append(outcome_rule)
+                """
+                fact.supports_rules.append(outcome_rule)
+                rule.supports_rules.append(outcome_rule)
                 kb.kb_add(outcome_rule)
 
