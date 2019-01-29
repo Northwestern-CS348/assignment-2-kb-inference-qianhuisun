@@ -1,6 +1,7 @@
 import read, copy
 from util import *
 from logical_classes import *
+import copy
 
 verbose = 0
 
@@ -100,7 +101,6 @@ class KnowledgeBase(object):
         Returns:
             listof Bindings|False - list of Bindings if result found, False otherwise
         """
-        print("Asking {!r}".format(fact))
         if factq(fact):
             f = Fact(fact.statement)
             bindings_lst = ListOfBindings()
@@ -128,7 +128,48 @@ class KnowledgeBase(object):
         printv("Retracting {!r}", 0, verbose, [fact_or_rule])
         ####################################################
         # Student code goes here
-        
+        if isinstance(fact_or_rule, Fact):
+            if not fact_or_rule in self.facts:
+                return
+            ind = self.facts.index(fact_or_rule)
+            # if it was not supportes
+            if not self.facts[ind].supported_by:
+                # if it was asserted
+                if self.facts[ind].asserted:
+                    self.facts[ind].asserted = False
+                for fact in self.facts[ind].supports_facts:
+                    for x in fact.supported_by:
+                        if self.facts[ind] in x:
+                            del fact.supported_by[fact.supported_by.index(x)]
+                    if not fact.asserted:
+                        self.kb_retract(fact)
+                for rule in self.facts[ind].supports_rules:
+                    for x in rule.supported_by:
+                        if self.facts[ind] in x:
+                            del rule.supported_by[rule.supported_by.index(x)]
+                    if not rule.asserted:
+                        self.kb_retract(rule)
+                del self.facts[ind]
+        elif isinstance(fact_or_rule, Rule):
+            if not fact_or_rule in self.rules:
+                return
+            ind = self.rules.index(fact_or_rule)
+            if not self.rules[ind].supported_by:
+                if not self.rules[ind].asserted:
+                    for fact in self.rules[ind].supports_facts:
+                        for x in fact.supported_by:
+                            if self.rules[ind] in x:
+                                del fact.supported_by[fact.supported_by.index(x)]
+                        if not fact.asserted:
+                            self.kb_retract(fact)
+                    for rule in self.rules[ind].supports_rules:
+                        for x in rule.supported_by:
+                            if self.rules[ind] in x:
+                                del rule.supported_by[rule.supported_by.index(x)]
+                        if not rule.asserted:
+                            self.kb_retract(rule)
+                    del self.rules[ind]
+
 
 class InferenceEngine(object):
     def fc_infer(self, fact, rule, kb):
@@ -146,3 +187,37 @@ class InferenceEngine(object):
             [fact.statement, rule.lhs, rule.rhs])
         ####################################################
         # Student code goes here
+        bindings = match(fact.statement, rule.lhs[0])
+        # if fact and rule match, then we have bindings to be True
+        if bindings:
+            if len(rule.lhs) == 1:
+                rule_cp = copy.deepcopy(rule)
+                outcome_fact = Fact(rule_cp.rhs, [[fact, rule]])
+                for term in outcome_fact.statement.terms:
+                    if term.term.element in bindings.bindings_dict:
+                        ind = outcome_fact.statement.terms.index(term)
+                        outcome_fact.statement.terms[ind].term = Constant(bindings.bindings_dict[term.term.element])
+                ind = kb.facts.index(fact)
+                kb.facts[ind].supports_facts.append(outcome_fact)
+                ind = kb.rules.index(rule)
+                kb.rules[ind].supports_facts.append(outcome_fact)
+                kb.kb_add(outcome_fact)
+            else:
+                rule_cp = copy.deepcopy(rule)
+                del(rule_cp.lhs[0])
+                outcome_rule = Rule([rule_cp.lhs, rule_cp.rhs], [[fact, rule]])
+                for lhs_statement in outcome_rule.lhs:
+                    for term in lhs_statement.terms:
+                        if term.term.element in bindings.bindings_dict:
+                            ind = lhs_statement.terms.index(term)
+                            lhs_statement.terms[ind].term = Constant(bindings.bindings_dict[term.term.element])
+                for term in outcome_rule.rhs.terms:
+                    if term.term.element in bindings.bindings_dict:
+                        ind = outcome_rule.rhs.terms.index(term)
+                        outcome_rule.rhs.terms[ind].term = Constant(bindings.bindings_dict[term.term.element])
+                ind = kb.facts.index(fact)
+                kb.facts[ind].supports_rules.append(outcome_rule)
+                ind = kb.rules.index(rule)
+                kb.rules[ind].supports_rules.append(outcome_rule)
+                kb.kb_add(outcome_rule)
+
