@@ -1,7 +1,6 @@
 import read, copy
 from util import *
 from logical_classes import *
-import copy
 
 verbose = 0
 
@@ -63,6 +62,8 @@ class KnowledgeBase(object):
                     self.ie.fc_infer(fact_rule, rule, self)
             else:
                 if fact_rule.supported_by:
+                    # we modify the fact [which has same predicate and terms] as fact_rule, not fact_rule itself
+                    # thus we use index() to locate that fact
                     ind = self.facts.index(fact_rule)
                     for f in fact_rule.supported_by:
                         self.facts[ind].supported_by.append(f)
@@ -76,6 +77,9 @@ class KnowledgeBase(object):
                     self.ie.fc_infer(fact, fact_rule, self)
             else:
                 if fact_rule.supported_by:
+                    # why index() ?
+                    # we modify the rule [which has same predicate and terms] as fact_rule, not fact_rule itself
+                    # thus we use index() to locate that rule
                     ind = self.rules.index(fact_rule)
                     for f in fact_rule.supported_by:
                         self.rules[ind].supported_by.append(f)
@@ -141,12 +145,14 @@ class KnowledgeBase(object):
                 for fact in self.facts[ind].supports_facts:
                     for x in fact.supported_by:
                         if self.facts[ind] in x:
+                            # TODO or just del x
                             del fact.supported_by[fact.supported_by.index(x)]
                     if not fact.asserted:
                         self.kb_retract(fact)
                 for rule in self.facts[ind].supports_rules:
                     for x in rule.supported_by:
                         if self.facts[ind] in x:
+                            # TODO or just del x
                             del rule.supported_by[rule.supported_by.index(x)]
                     if not rule.asserted:
                         self.kb_retract(rule)
@@ -159,12 +165,14 @@ class KnowledgeBase(object):
                 if not self.rules[ind].asserted:
                     for fact in self.rules[ind].supports_facts:
                         for x in fact.supported_by:
+                            # TODO or just del x
                             if self.rules[ind] in x:
                                 del fact.supported_by[fact.supported_by.index(x)]
                         if not fact.asserted:
                             self.kb_retract(fact)
                     for rule in self.rules[ind].supports_rules:
                         for x in rule.supported_by:
+                            # TODO or just del x
                             if self.rules[ind] in x:
                                 del rule.supported_by[rule.supported_by.index(x)]
                         if not rule.asserted:
@@ -192,10 +200,13 @@ class InferenceEngine(object):
         # if fact and rule match, then we have bindings to be True
         if bindings:
             if len(rule.lhs) == 1:
-                rule_cp = copy.deepcopy(rule)
-                outcome_fact = Fact(instantiate(rule_cp.rhs, bindings), [[fact, rule]])
-                # use instantiate instead
+                # At first, use deepcopy and change the predicate and terms.
+                # Now use instantiate instead. 
+                # In this way, create a statement and link its predicate and terms to original statement. 
+                outcome_fact = Fact(instantiate(rule.rhs, bindings), [[fact, rule]])
                 """
+                rule_cp = copy.deepcopy(rule)
+                outcome_fact = Fact(rule_cp.rhs, [[fact, rule]])
                 for term in outcome_fact.statement.terms:
                     if term.term.element in bindings.bindings_dict:
                         ind = outcome_fact.statement.terms.index(term)
@@ -205,10 +216,13 @@ class InferenceEngine(object):
                 rule.supports_facts.append(outcome_fact)
                 kb.kb_add(outcome_fact)
             else:
-                rule_cp = copy.deepcopy(rule)
-                outcome_rule = Rule([[instantiate(state_lhs, bindings) for state_lhs in rule_cp.lhs[1:]], instantiate(rule_cp.rhs, bindings)], [[fact, rule]])
-                # use instantiate instead
+                outcome_rule = Rule([[instantiate(state_lhs, bindings) for state_lhs in rule.lhs[1:]], instantiate(rule.rhs, bindings)], [[fact, rule]])
+                # At first, use deepcopy and change the predicate and terms.
+                # Now use instantiate instead. 
+                # In this way, create a statement and link its predicate and terms to original statement. 
                 """
+                rule_cp = copy.deepcopy(rule)
+                outcome_rule = Rule([rule_cp.lhs[1:], rule_cp.rhs], [[fact, rule]])
                 for lhs_statement in outcome_rule.lhs:
                     for term in lhs_statement.terms:
                         if term.term.element in bindings.bindings_dict:
