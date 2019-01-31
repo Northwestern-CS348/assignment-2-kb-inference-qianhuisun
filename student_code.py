@@ -128,45 +128,50 @@ class KnowledgeBase(object):
         printv("Retracting {!r}", 0, verbose, [fact_or_rule])
         ####################################################
         # Student code goes here
+
         if isinstance(fact_or_rule, Fact):
             if not fact_or_rule in self.facts:
                 return
-            ind = self.facts.index(fact_or_rule)
-            if not self.facts[ind].supported_by:
-                if self.facts[ind].asserted:
-                    self.facts[ind].asserted = False
-                for fact in self.facts[ind].supports_facts:
-                    for x in fact.supported_by[:]:
-                        if self.facts[ind] in x:
-                            fact.supported_by.remove(x)
-                    if not fact.asserted:
-                        self.kb_retract(fact)
-                for rule in self.facts[ind].supports_rules:
-                    for x in rule.supported_by[:]:
-                        if self.facts[ind] in x:
-                            rule.supported_by.remove(x)
-                    if not rule.asserted:
-                        self.kb_retract(rule)
-                del self.facts[ind]
+            fact_to_remove = self.facts[self.facts.index(fact_or_rule)]
+            if not fact_to_remove.supported_by:
+                if fact_to_remove.asserted:
+                    fact_to_remove.asserted = False
+                for fact in fact_to_remove.supports_facts:
+                    fact_to_retract = self.facts[self.facts.index(fact)]
+                    for x in fact_to_retract.supported_by[:]:
+                        if fact_to_remove in x:
+                            fact_to_retract.supported_by.remove(x)
+                    if not fact_to_retract.asserted:
+                        self.kb_retract(fact_to_retract)
+                for rule in fact_to_remove.supports_rules:
+                    rule_to_retract = self.rules[self.rules.index(rule)]
+                    for x in rule_to_retract.supported_by[:]:
+                        if fact_to_remove in x:
+                            rule_to_retract.supported_by.remove(x)
+                    if not rule_to_retract.asserted:
+                        self.kb_retract(rule_to_retract)
+                self.facts.remove(fact_to_remove)
+
         elif isinstance(fact_or_rule, Rule):
             if not fact_or_rule in self.rules:
                 return
-            ind = self.rules.index(fact_or_rule)
-            if not self.rules[ind].supported_by:
-                if not self.rules[ind].asserted:
-                    for fact in self.rules[ind].supports_facts:
-                        for x in fact.supported_by[:]:
-                            if self.rules[ind] in x:
-                                fact.supported_by.remove(x)
-                        if not fact.asserted:
-                            self.kb_retract(fact)
-                    for rule in self.rules[ind].supports_rules:
-                        for x in rule.supported_by[:]:
-                            if self.rules[ind] in x:
-                                rule.supported_by.remove(x)
-                        if not rule.asserted:
-                            self.kb_retract(rule)
-                    del self.rules[ind]
+            rule_to_remove = self.rules[self.rules.index(fact_or_rule)]
+            if not rule_to_remove.supported_by and not rule_to_remove.asserted:
+                for fact in rule_to_remove.supports_facts:
+                    fact_to_retract = self.facts[self.facts.index(fact)]
+                    for x in fact_to_retract.supported_by[:]:
+                        if rule_to_remove in x:
+                            fact_to_retract.supported_by.remove(x)
+                    if not fact_to_retract.asserted:
+                        self.kb_retract(fact_to_retract)
+                for rule in rule_to_remove.supports_rules:
+                    rule_to_retract = self.rules[self.rules.index(rule)]
+                    for x in rule_to_retract.supported_by[:]:
+                        if rule_to_remove in x:
+                            rule_to_retract.supported_by.remove(x)
+                    if not rule_to_retract.asserted:
+                        self.kb_retract(rule_to_retract)
+                self.rules.remove(rule_to_remove)
 
 
 class InferenceEngine(object):
@@ -185,6 +190,7 @@ class InferenceEngine(object):
             [fact.statement, rule.lhs, rule.rhs])
         ####################################################
         # Student code goes here
+        
         bindings = match(fact.statement, rule.lhs[0])
         # if fact and rule match, then we have bindings to be True
         if bindings:
