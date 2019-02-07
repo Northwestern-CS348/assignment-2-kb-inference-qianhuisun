@@ -1,0 +1,20 @@
+TESTS WITH ERRORS 
+test14 (gradingtests.UnitTests)
+Traceback (most recent call last):
+  File "/Users/k2i/academics/automatedgradingapp/app/testing/kb-inference/gradingtests.py", line 405, in test14
+    KB.kb_retract(fact2)
+  File "/Users/k2i/academics/automatedgradingapp/app/testing/kb-inference/student_code.py", line 140, in kb_retract
+    fact_to_retract = self.facts[self.facts.index(fact)]
+ValueError: Fact('fact', Statement('heathyPerson', [Term(Constant('A'))]), False, [], [], []) is not in list
+
+-------------------------------
+TESTS FAILED  
+test10 (gradingtests.UnitTests)
+Traceback (most recent call last):
+  File "/Users/k2i/academics/automatedgradingapp/app/testing/kb-inference/gradingtests.py", line 282, in test10
+    self.assertFalse(answer2)
+AssertionError: True is not false
+
+-------------------------------
+TESTS SKIPPED 
+-------------------------------
