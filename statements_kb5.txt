@@ -1,0 +1,6 @@
+fact: (motherof a b)
+fact: (motherof a d)
+fact: (motherof b c)
+fact: (motherof d c)
+
+rule: ((motherof ?x ?y) (motherof ?y ?z)) -> (grandof ?x ?z)
